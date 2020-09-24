@@ -126,15 +126,15 @@ def encoder_layer(hparams, name="encoder_layer"):
           'mask': padding_mask
       })
   attention = tf.keras.layers.Dropout(hparams.dropout)(attention)
-  attention = tf.keras.layers.LayerNormalization(epsilon=1e-6)(inputs +
-                                                               attention)
+  attention = tf.keras.layers.LayerNormalization(
+      epsilon=1e-6)(inputs + attention)
 
   outputs = tf.keras.layers.Dense(
       hparams.num_units, activation=hparams.activation)(attention)
   outputs = tf.keras.layers.Dense(hparams.d_model)(outputs)
   outputs = tf.keras.layers.Dropout(hparams.dropout)(outputs)
-  outputs = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention +
-                                                             outputs)
+  outputs = tf.keras.layers.LayerNormalization(
+      epsilon=1e-6)(attention + outputs)
 
   return tf.keras.Model(
       inputs=[inputs, padding_mask], outputs=outputs, name=name)
@@ -176,8 +176,8 @@ def decoder_layer(hparams, name="decoder_layer"):
           'value': inputs,
           'mask': look_ahead_mask
       })
-  attention1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention1 +
-                                                                inputs)
+  attention1 = tf.keras.layers.LayerNormalization(
+      epsilon=1e-6)(attention1 + inputs)
 
   attention2 = MultiHeadAttention(
       hparams, name="attention_2")(inputs={
@@ -187,15 +187,15 @@ def decoder_layer(hparams, name="decoder_layer"):
           'mask': padding_mask
       })
   attention2 = tf.keras.layers.Dropout(hparams.dropout)(attention2)
-  attention2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)(attention2 +
-                                                                attention1)
+  attention2 = tf.keras.layers.LayerNormalization(
+      epsilon=1e-6)(attention2 + attention1)
 
   outputs = tf.keras.layers.Dense(
       hparams.num_units, activation=hparams.activation)(attention2)
   outputs = tf.keras.layers.Dense(hparams.d_model)(outputs)
   outputs = tf.keras.layers.Dropout(hparams.dropout)(outputs)
-  outputs = tf.keras.layers.LayerNormalization(epsilon=1e-6)(outputs +
-                                                             attention2)
+  outputs = tf.keras.layers.LayerNormalization(
+      epsilon=1e-6)(outputs + attention2)
 
   return tf.keras.Model(
       inputs=[inputs, enc_outputs, look_ahead_mask, padding_mask],
@@ -254,5 +254,8 @@ def transformer(hparams, name="transformer"):
 
   outputs = tf.keras.layers.Dense(
       units=hparams.vocab_size, name="outputs")(dec_outputs)
+
+  # enable output is in float32 even training in mixed precision
+  outputs = tf.keras.layers.Activation('linear', dtype='float32')(outputs)
 
   return tf.keras.Model(inputs=[inputs, dec_inputs], outputs=outputs, name=name)
