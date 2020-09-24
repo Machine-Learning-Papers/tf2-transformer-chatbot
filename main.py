@@ -8,11 +8,14 @@ from model import transformer
 from dataset import get_dataset, preprocess_sentence
 
 
-def use_mixed_precision():
-  policy = mixed_precision.Policy('mixed_float16')
+def set_mixed_precision(hparams):
+  policy = mixed_precision.Policy('mixed_float16' if hparams.
+                                  mixed_precision else 'float32')
   mixed_precision.set_policy(policy)
   print('\nCompute dtype: {}\nVariable dtype: {}\n'.format(
       policy.compute_dtype, policy.variable_dtype))
+
+  return policy
 
 
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
@@ -84,12 +87,11 @@ def evaluate(hparams, model, tokenizer):
 
 
 def main(hparams):
-  if hparams.mixed_precision:
-    use_mixed_precision()
+  policy = set_mixed_precision(hparams)
 
   dataset, tokenizer = get_dataset(hparams)
 
-  model = transformer(hparams)
+  model = transformer(hparams, policy)
 
   optimizer = tf.keras.optimizers.Adam(
       CustomSchedule(hparams), beta_1=0.9, beta_2=0.98, epsilon=1e-9)
