@@ -1,4 +1,5 @@
 import argparse
+from time import time
 import tensorflow as tf
 from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
@@ -112,7 +113,10 @@ def main(hparams):
 
   model.compile(optimizer, loss=loss_function, metrics=[accuracy])
 
+  start = time()
   model.fit(dataset, epochs=hparams.epochs)
+  end = time()
+  print('\n{:.02f}s per epoch\n'.format((end - start) / hparams.peochs))
 
   evaluate(hparams, model, tokenizer)
 
